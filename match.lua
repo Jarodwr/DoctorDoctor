@@ -1,7 +1,8 @@
 local Board = require "board"
 local UI = require "ui"
+local layout_generator = require "layout_generator"
 
-function tile(color, type, controlled)
+function tile(color, type)
     assert(color ~= nil, "Must assign a color to the tile")
     assert(type ~= nil, "Must assign a type to the tile")
     return {
@@ -10,8 +11,12 @@ function tile(color, type, controlled)
     }
 end
 
+local board_width, board_height = 8, 16
+
+-- local level_rows = {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 12, 12, 13}
+
 return function()
-    local board = Board(8, 16)
+    local board = Board(board_width, board_height)
     local ui = UI()
 
     local turn_delay = 0.25
@@ -19,6 +24,9 @@ return function()
     local faster_turn = false
 
     local controlled_pill = nil
+
+    -- POPULATE BOARD WITH VIRUSES
+    layout_generator(board, 3, {"steel", "crimson", "ocean"})
 
     function add_pill()
         controlled_pill = {
@@ -132,6 +140,7 @@ return function()
                     turn_timer = 0
                     -- APPLY GRAVITY TO PILL, IF PILL CAN'T MOVE DOWN THEN SET IT
                     if not move_controlled(0, 1) then
+                        -- TODO: CHECK IF ANY COMBOS HAVE BEEN TRIGGERED
                         controlled_pill = nil
                     end
                 end
