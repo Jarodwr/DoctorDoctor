@@ -70,8 +70,10 @@ return function(width, height)
         for x = 1, width do
             for y = 1, height do
                 if board[x][y] then
-                else
-                    pill_sheet.drawk("green:heart", x * tile_width, y * tile_height)
+                    local tile = board[x][y]
+                    pill_sheet.drawk(tile.color .. ":" .. tile.type, x * tile_width, y * tile_height)
+                -- else
+                --     pill_sheet.drawk("green:heart", x * tile_width, y * tile_height)
                 end
             end
         end
@@ -90,6 +92,10 @@ return function(width, height)
 
     function board.get_tile_dimensions()
         return pill_sheet.get_tile_dimensions()
+    end
+
+    function board.is_within_bounds(x, y)
+        return x >= 1 and x <= width and y >= 1 and y <= height
     end
 
     return setmetatable(

@@ -1,19 +1,22 @@
-local Board = require "board"
-local UI = require "ui"
-
-local board = Board(8, 16)
-local ui = UI()
+local match
 
 function love.load()
+    love.graphics.setDefaultFilter('nearest', 'nearest')
+    match = require("match")()
 end
 
 function love.update(dt)
+    match.update(dt)
 end
 
 function love.draw()
-    board.draw()
-    love.graphics.push()
-    love.graphics.translate(board.get_dimensions(), 0)
-    ui.draw()
-    love.graphics.pop()
+    match.draw()
+end
+
+function love.keypressed(key, scancode, isrepeat)
+    match.keypressed(key)
+end
+
+function love.keyreleased(key, scancode)
+    match.keyreleased(key)
 end

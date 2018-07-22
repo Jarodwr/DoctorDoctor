@@ -80,8 +80,6 @@ return sheeter(
                     return color .. ":" .. type
                 end
             end
-
-            return chunk.x .. "," .. chunk.y .. ":" .. offset.x .. "," .. offset.y
         end
     end
 )
