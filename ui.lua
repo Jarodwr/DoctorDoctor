@@ -13,7 +13,7 @@ function next_row(num)
     love.graphics.translate(0, 16 * num)
 end
 
-return function(high_score, initial_level, initial_speed, initial_virus_count)
+return function(high_score, level, initial_speed, initial_virus_count)
     local high_score = high_score or 0
     local current_score = 0
     local level = initial_level or 1
@@ -43,5 +43,11 @@ return function(high_score, initial_level, initial_speed, initial_virus_count)
             love.graphics.print(string.format("%02d", virus))
             love.graphics.pop()
         end,
+        add_points = function(points)
+            current_score = current_score + points
+        end,
+        virus_removed = function()
+            virus = virus - 1
+        end
     }
 end

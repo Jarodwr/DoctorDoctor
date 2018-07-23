@@ -11,22 +11,41 @@ function tile(color, type)
     }
 end
 
+local speed_map = {
+    ["slow"] = 0.75,
+    ["medium"] = 0.5,
+    ["fast"] = 0.25
+}
+
 local board_width, board_height = 8, 16
 
-return function()
+return function(high_score, level, speed)
     local board = Board(board_width, board_height)
-    local ui = UI()
+    local score = 0
 
     local falling_mode = false
 
-    local turn_delay = 0.25
+    local turn_delay = speed_map[speed]
     local turn_timer = 0
     local faster_turn = false
 
     local controlled_pill = nil
+    local level = level or 1
 
     -- POPULATE BOARD WITH VIRUSES AND GET THE COLORS BEING USED THIS MATCH
-    local virus_types = layout_generator(board, 2)
+    local virus_types, remaining_viruses = layout_generator(board, level)
+
+    local ui = UI(high_score, level, speed, remaining_viruses)
+    
+    function finish_match()
+        error("NYI")
+    end
+
+    function change_score(blocks, viruses)
+        local points = (100 * blocks) + (1000 * viruses)
+        ui.add_points(points)
+        score = score + points
+    end
 
     function add_pill()
         controlled_pill = {
@@ -129,6 +148,11 @@ return function()
         return true
     end
 
+    function remove_virus()
+        ui.virus_removed()
+        remaining_viruses = remaining_viruses - 1
+    end
+
     function check_combo(x, y)
         assert(board.is_within_bounds(x, y), "x and y must be within the bounds of the board.")
         local master = board[x][y]
@@ -168,15 +192,36 @@ return function()
         end
 
         if #horizontal_combo > 3 then
+            local virus_count = 0
             for _, coordinate in ipairs(horizontal_combo) do
+                if board[coordinate.x][coordinate.y].type == "heart" then
+                    virus_count = virus_count + 1
+                    remove_virus()
+                end
                 board[coordinate.x][coordinate.y] = nil
+                if virus_count > 0 then
+                    -- ADD POINTS
+                    change_score(#vertical_combo, virus_count)
+                end
             end
         end
 
         if #vertical_combo > 3 then
+            local virus_count = 0
             for _, coordinate in ipairs(vertical_combo) do
+                if board[coordinate.x][coordinate.y].type == "heart" then
+                    virus_count = virus_count + 1
+                    remove_virus()
+                end
                 board[coordinate.x][coordinate.y] = nil
             end
+            if virus_count > 0 then
+                change_score(#vertical_combo, virus_count)
+            end
+        end
+
+        if remaining_viruses == 0 then
+            finish_match()
         end
 
         if #vertical_combo > 3 or #horizontal_combo > 3 then

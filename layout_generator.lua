@@ -114,5 +114,5 @@ return function(board, virus_level)
         remaining_viruses = generate_virus()
     end
 
-    return virus_types
+    return virus_types, virus_level * 4
 end

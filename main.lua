@@ -2,7 +2,7 @@ local match
 
 function love.load()
     love.graphics.setDefaultFilter('nearest', 'nearest')
-    match = require("match")()
+    match = require("match")(0, 1, "fast")
 end
 
 function love.update(dt)
