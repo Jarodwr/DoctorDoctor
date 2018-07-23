@@ -13,8 +13,6 @@ end
 
 local board_width, board_height = 8, 16
 
--- local level_rows = {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 12, 12, 13}
-
 return function()
     local board = Board(board_width, board_height)
     local ui = UI()
@@ -26,13 +24,13 @@ return function()
     local controlled_pill = nil
 
     -- POPULATE BOARD WITH VIRUSES
-    layout_generator(board, 3, {"steel", "crimson", "ocean"})
+    local virus_types = layout_generator(board, 5)
 
     function add_pill()
         controlled_pill = {
             rotation = "horizontal",
-            {x = 1, y = 1, tile = tile("white", "left_horizontal_bar")},
-            {x = 2, y = 1, tile = tile("crimson", "right_horizontal_bar")}
+            {x = 1, y = 1, tile = tile(virus_types[love.math.random(#virus_types)], "left_horizontal_bar")},
+            {x = 2, y = 1, tile = tile(virus_types[love.math.random(#virus_types)], "right_horizontal_bar")}
         }
         for _, portion in ipairs(controlled_pill) do
             board[portion.x][portion.y] = portion.tile

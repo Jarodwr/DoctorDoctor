@@ -57,7 +57,7 @@ local type_map = {
 
 }
 
-return sheeter(
+local sheet = sheeter(
     "puhzil.png",
     16,
     16,
@@ -83,3 +83,8 @@ return sheeter(
         end
     end
 )
+
+sheet.colors = color_map
+sheet.types = type_map
+
+return sheet

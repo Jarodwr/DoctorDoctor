@@ -1,15 +1,38 @@
+local sprite_sheet = require "pill_sheet"
+
+function generate_colors()
+    local colors = {}
+    local columns = {}
+    while(#columns < 3) do
+        local column = sprite_sheet.colors[love.math.random(0, #sprite_sheet.colors)]
+        local is_present = false
+        for i = 1, #columns do
+            if columns[i] == column then
+                is_present = true
+                break
+            end
+        end
+        if not is_present then
+            table.insert(columns, column)
+        end
+    end
+    for _, column in ipairs(columns) do
+        table.insert(colors, column[love.math.random(1, #column)])
+    end
+
+    return colors
+end
+
 local level_rows = {10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 11, 11, 12, 12, 13}
-
 -- ALGORITHM FROM: https://tetris.wiki/Dr._Mario#Virus_Generation
-
-return function(board, virus_level, colors)
+return function(board, virus_level)
     local board_width, board_height = board.get_bounds()
     local virus_level = virus_level
     local remaining_viruses = virus_level * 4
     local max_virus_row = level_rows[virus_level] or 13
 
     -- TODO: Randomly generate these
-    local virus_types = colors
+    local virus_types = generate_colors()
 
     function check_virus_tile(x, y, type)
         local check_list = {}
@@ -55,10 +78,9 @@ return function(board, virus_level, colors)
 
     function generate_virus()
         local virus_position = {
-            x = math.random(1, board_width),
-            y = math.random(max_virus_row, board_height)
+            x = love.math.random(1, board_width),
+            y = love.math.random(board_height - max_virus_row, board_height)
         }
-
         local virus_type = virus_types[(remaining_viruses % 3) + 1]
 
         local candidate = generate_candidate(virus_position.x, virus_position.y, virus_type)
@@ -82,18 +104,15 @@ return function(board, virus_level, colors)
             end
             if pass then
                 board[candidate.x][candidate.y] = tile(candidate.type, "heart")
-            else
-                -- PLEASE REMEMBER HOW TO DO THIS IN THE MORNING FUCK
+                return remaining_viruses - 1
             end
-        else
-            return remaining_viruses
         end
-
-        -- TODO
-        return remaining_viruses - 1
+        return remaining_viruses
     end
 
     while (remaining_viruses > 0) do
         remaining_viruses = generate_virus()
     end
+
+    return virus_types
 end
