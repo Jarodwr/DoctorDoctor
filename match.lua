@@ -17,14 +17,16 @@ return function()
     local board = Board(board_width, board_height)
     local ui = UI()
 
+    local falling_mode = false
+
     local turn_delay = 0.25
     local turn_timer = 0
     local faster_turn = false
 
     local controlled_pill = nil
 
-    -- POPULATE BOARD WITH VIRUSES
-    local virus_types = layout_generator(board, 5)
+    -- POPULATE BOARD WITH VIRUSES AND GET THE COLORS BEING USED THIS MATCH
+    local virus_types = layout_generator(board, 2)
 
     function add_pill()
         controlled_pill = {
@@ -115,6 +117,75 @@ return function()
         return true
     end
 
+    function move_tile(x, y, dx, dy)
+        assert(board.is_within_bounds(x, y), "Position must be within the bounds of the board.")
+        local next_x, next_y = x + dx, y + dy
+        if board.is_within_bounds(next_x, next_y) == false or board[next_x][next_y] ~= nil then
+            return false
+        end
+        local tile = board[x][y]
+        board[x][y] = nil
+        board[next_x][next_y] = tile
+        return true
+    end
+
+    function check_combo(x, y)
+        assert(board.is_within_bounds(x, y), "x and y must be within the bounds of the board.")
+        local master = board[x][y]
+        local vertical_combo = {{x = x, y = y}}
+        local horizontal_combo = {{x = x, y = y}}
+
+        for cx = x + 1, board_width, 1 do
+            local current_tile = board[cx][y]
+            if current_tile == nil or current_tile.color ~= master.color then
+                break
+            end
+            table.insert(horizontal_combo, {x = cx, y = y})
+        end
+
+        for cx = x - 1, 1, -1 do
+            local current_tile = board[cx][y]
+            if current_tile == nil or current_tile.color ~= master.color then
+                break
+            end
+            table.insert(horizontal_combo, {x = cx, y = y})
+        end
+
+        for cy = y + 1, board_height, 1 do
+            local current_tile = board[x][cy]
+            if current_tile == nil or current_tile.color ~= master.color then
+                break
+            end
+            table.insert(vertical_combo, {x = x, y = cy})
+        end
+
+        for cy = y - 1, 1, -1 do
+            local current_tile = board[x][cy]
+            if current_tile == nil or current_tile.color ~= master.color then
+                break
+            end
+            table.insert(vertical_combo, {x = x, y = cy})
+        end
+
+        if #horizontal_combo > 3 then
+            for _, coordinate in ipairs(horizontal_combo) do
+                board[coordinate.x][coordinate.y] = nil
+            end
+        end
+
+        if #vertical_combo > 3 then
+            for _, coordinate in ipairs(vertical_combo) do
+                board[coordinate.x][coordinate.y] = nil
+            end
+        end
+
+        if #vertical_combo > 3 or #horizontal_combo > 3 then
+            return true
+        else
+            return false
+        end
+    end
+
     function pause()
         error("NYI")
     end
@@ -126,20 +197,78 @@ return function()
     return {
         update = function(dt)
             -- IF NO PILL IS BEING CONTROLLED, CREATE A NEW ONE
-            if controlled_pill == nil then
-                add_pill()
+            if faster_turn then
+                turn_timer = turn_timer + dt * 2
             else
-                if faster_turn then
-                    turn_timer = turn_timer + dt * 2
+                turn_timer = turn_timer + dt
+            end
+            if turn_timer > turn_delay then
+                turn_timer = 0
+                if falling_mode then
+                    -- Drop all of the half pills
+                    -- Drop from bottom layer up
+                    local keep_falling = false
+                    for x = board_width, 1, -1 do
+                        for y = board_height, 1, -1 do
+                            local tile = board[x][y]
+
+                            local complementary = {
+                                ["left_horizontal_bar"] = {x = 1, y = 0, type = "right_horizontal_bar"},
+                                ["right_horizontal_bar"] = {x = -1, y = 0, type = "left_horizontal_bar"},
+                                ["top_vertical_bar"] = {x = 0, y = 1, type = "DOESNT MATTER"},
+                                ["bottom_vertical_bar"] = {x = 0, y = -1, type = "DOESNT MATTER"}
+                            }
+
+                            if tile ~= nil then
+                                complement = complementary[tile.type]
+                                if complement then
+                                    local next_x, next_y = complement.x + x, complement.y + y
+                                    if
+                                        not (board.is_within_bounds(next_x, next_y) and board[next_x][next_y] ~= nil and
+                                            board[next_x][next_y].type == complement.type)
+                                     then
+                                        -- DROP THE PARTIAL PILLS
+                                        if move_tile(x, y, 0, 1) then
+                                            keep_falling = true
+                                        else
+                                            check_combo(x, y)
+                                        end
+                                    elseif
+                                        board.is_within_bounds(x, y + 1) and board.is_within_bounds(next_x, next_y + 1)
+                                     then
+                                        if
+                                            board[x][y + 1] == nil and
+                                                (board[next_x][next_y + 1] == nil)
+                                         then
+                                            -- DROP UNSUPPORTED PILLS
+                                            move_tile(x, y, 0, 1)
+                                            move_tile(next_x, next_y, 0, 1)
+                                         else
+                                            check_combo(x, y)
+                                        end
+                                    else
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    if not keep_falling then
+                        falling_mode = false
+                    end
                 else
-                    turn_timer = turn_timer + dt
-                end
-                if turn_timer > turn_delay then
-                    turn_timer = 0
-                    -- APPLY GRAVITY TO PILL, IF PILL CAN'T MOVE DOWN THEN SET IT
-                    if not move_controlled(0, 1) then
-                        -- TODO: CHECK IF ANY COMBOS HAVE BEEN TRIGGERED
-                        controlled_pill = nil
+                    -- CREATE A NEW PILL IF THERE ARE CURRENTLY NO CONTROLLED PILLS
+                    if controlled_pill == nil then
+                        add_pill()
+                    else
+                        -- APPLY GRAVITY TO PILL, IF PILL CAN'T MOVE DOWN THEN SET IT
+                        if not move_controlled(0, 1) then
+                            for _, portion in ipairs(controlled_pill) do
+                                if check_combo(portion.x, portion.y) then
+                                    falling_mode = true
+                                end
+                            end
+                            controlled_pill = nil
+                        end
                     end
                 end
             end

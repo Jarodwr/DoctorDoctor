@@ -10,7 +10,10 @@ function love.update(dt)
 end
 
 function love.draw()
+    love.graphics.push()
+    love.graphics.translate(16, 16)
     match.draw()
+    love.graphics.pop()
 end
 
 function love.keypressed(key, scancode, isrepeat)
