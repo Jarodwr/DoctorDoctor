@@ -19,7 +19,7 @@ local speed_map = {
 
 local board_width, board_height = 8, 16
 
-return function(high_score, level, speed)
+return function(scene_change_callback, high_score, level, speed)
     local board = Board(board_width, board_height)
     local score = 0
 
@@ -38,6 +38,14 @@ return function(high_score, level, speed)
     local ui = UI(high_score, level, speed, remaining_viruses)
     
     function finish_match()
+        scene_change_callback("main_menu")
+    end
+
+    function pause()
+        error("NYI")
+    end
+
+    function unpause()
         error("NYI")
     end
 
@@ -50,8 +58,8 @@ return function(high_score, level, speed)
     function add_pill()
         controlled_pill = {
             rotation = "horizontal",
-            {x = 1, y = 1, tile = tile(virus_types[love.math.random(#virus_types)], "left_horizontal_bar")},
-            {x = 2, y = 1, tile = tile(virus_types[love.math.random(#virus_types)], "right_horizontal_bar")}
+            {x = board_width/2, y = 1, tile = tile(virus_types[love.math.random(#virus_types)], "left_horizontal_bar")},
+            {x = board_width/2 + 1, y = 1, tile = tile(virus_types[love.math.random(#virus_types)], "right_horizontal_bar")}
         }
         for _, portion in ipairs(controlled_pill) do
             board[portion.x][portion.y] = portion.tile
@@ -229,14 +237,6 @@ return function(high_score, level, speed)
         else
             return false
         end
-    end
-
-    function pause()
-        error("NYI")
-    end
-
-    function unpause()
-        error("NYI")
     end
 
     return {
